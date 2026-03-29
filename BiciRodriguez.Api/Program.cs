@@ -1,41 +1,86 @@
+using Microsoft.EntityFrameworkCore;
+using BiciRodriguez.Api.Models; // Importa tus tablas (Bicicleta, Cliente, etc.)
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+#region 1. CONFIGURACIÓN DE SERVICIOS (Dependency Injection)
+// ----------------------------------------------------------------------------------
+
+// --- Base de Datos ---
+// Registra el contexto 'BiciContext' usando la cadena de conexión de appsettings.json
+builder.Services.AddDbContext<BiciContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// --- Controladores y JSON ---
+builder.Services.AddControllers()
+    .AddJsonOptions(options => {
+        // Crucial: Evita errores de "Ciclo Infinito" al consultar tablas relacionadas
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
+
+// --- Swagger / OpenAPI (Documentación Interactiva) ---
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    // Usamos la ruta completa 'Microsoft.OpenApi.Models.OpenApiInfo' 
+    // para evitar conflictos con tu carpeta local 'Models'
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
+    {
+        Title = "Bicicletería Rodríguez API",
+        Version = "v1",
+        Description = "Sistema de Gestión de Taller y Ventas - OmarMendezR"
+    });
+});
+
+// --- Seguridad CORS (ISO 27001) ---
+// Permite que tu futuro Front-end (React/Angular) se conecte a esta API sin bloqueos
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy => policy.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader());
+});
+
+// ----------------------------------------------------------------------------------
+#endregion
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+#region 2. PIPELINE DE MIDDLEWARE (Configuración de Red)
+// ----------------------------------------------------------------------------------
+
+// Habilitar Swagger solo en entorno de Desarrollo
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseHttpsRedirection(); // Fuerza el uso de conexiones seguras (HTTPS)
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.UseCors("AllowAll");    // Aplica la política de acceso configurada arriba
 
-app.MapGet("/weatherforecast", () =>
+app.UseAuthorization();    // Prepara el terreno para el sistema de Login/Roles
+
+// ----------------------------------------------------------------------------------
+#endregion
+
+#region 3. MAPEADO DE RUTAS (Endpoints)
+// ----------------------------------------------------------------------------------
+
+// Registra automáticamente todos los Controllers que crearemos
+app.MapControllers();
+
+// Endpoint de Salud (Health Check): Útil para monitorear que la API esté "viva"
+app.MapGet("/health", () => Results.Ok(new
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    status = "Healthy",
+    timestamp = DateTime.UtcNow,
+    db_status = "Connected"
+}));
+
+// ----------------------------------------------------------------------------------
+#endregion
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
