@@ -42,5 +42,20 @@ namespace BiciRodriguez.Api.Controllers
             return bicicleta;
         }
         #endregion
+        #region MËTODOS DE ESCRITURA (POST)
+        //POST: api/Bicicleteria
+        [HttpPost]
+        public async Task<ActionResult<Bicicleta>> PostBicicleta(Bicicleta nuevaBici)
+        {
+            // Agregamos el objeto al contexo (en memoria)
+            _context.Bicicletas.Add(nuevaBici);
+
+            // Guardamos los cambios en la DB de SQL Server
+            await _context.SaveChangesAsync();
+
+            // Devolvemos un code 201 Created y la ruta donde ver la bici creada
+            return CreatedAtAction(nameof(GetBicicleta), new { id = nuevaBici.BicicletaId }, nuevaBici);
+        }
+        #endregion
     }
 }
