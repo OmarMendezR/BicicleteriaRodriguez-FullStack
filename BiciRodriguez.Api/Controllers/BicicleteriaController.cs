@@ -26,6 +26,21 @@ namespace BiciRodriguez.Api.Controllers
             return await _context.Bicicletas.ToListAsync();
         }
 
+        // GET by ID
+        [HttpGet("{id}")] // El {id} se recibira un parametro desde el enpoint
+        public async Task<ActionResult<Bicicleta>> GetBicicleta(int id)
+        {
+            // Busca en la DB por su primary key
+            var bicicleta = await _context.Bicicletas.FindAsync(id);
+
+            // de no existir devolvemos un error 404
+            if (bicicleta == null)
+            {
+                return NotFound(new { mensaje = $"La bicicleta con ID {id} no fue encontrada." });
+            }
+
+            return bicicleta;
+        }
         #endregion
     }
 }
