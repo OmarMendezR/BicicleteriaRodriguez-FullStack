@@ -93,7 +93,11 @@ namespace BiciRodriguez.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<BicicletaResponseDto>> PostBicicleta(BicicletaResponseDto biciDto)
         {
-            // 1. VALIDACIÓN: Evitar duplicados de marco antes de procesar
+            // 1. EXTRAER IDENTIDAD (Preparado para Token)
+            var userIdClaim = User.FindFirst("id")?.Value ?? "1";
+            int currentUserId = int.Parse(userIdClaim);
+
+            // 2. VALIDACIÓN: Evitar duplicados de marco
             bool existeMarco = await _context.Bicicletas
                 .AnyAsync(b => b.NumeroMarco == biciDto.NumeroMarco);
 
@@ -102,21 +106,22 @@ namespace BiciRodriguez.Api.Controllers
                 return BadRequest($"Error: El número de marco '{biciDto.NumeroMarco}' ya está registrado.");
             }
 
-            // 2. MAPEO: De DTO a Entidad (Blindaje de datos)
+            // 3. MAPEO: De DTO a Entidad
             var nuevaBici = new Bicicleta
             {
                 Marca = biciDto.Marca,
                 NumeroMarco = biciDto.NumeroMarco,
-                // Convertimos 0 a null para respetar la FK opcional
                 ClienteId = (biciDto.ClienteId == 0) ? null : biciDto.ClienteId,
                 Color = string.IsNullOrWhiteSpace(biciDto.Color) ? "N/A" : biciDto.Color,
                 TipoBicicleta = string.IsNullOrWhiteSpace(biciDto.TipoBicicleta) ? "General" : biciDto.TipoBicicleta,
 
                 // Valores automáticos de sistema
                 Modelo = "N/A",
-                FechaRegistro = DateTime.Now,
-                UltimaModificacion = DateTime.Now,
-                CreadoPorUsuarioId = 1
+                FechaRegistro = DateTime.UtcNow, // Usamos UtcNow por estándar
+                UltimaModificacion = DateTime.UtcNow,
+
+                // ASIGNACIÓN AUTOMÁTICA DEL USUARIO
+                CreadoPorUsuarioId = currentUserId
             };
 
             try
@@ -124,7 +129,6 @@ namespace BiciRodriguez.Api.Controllers
                 _context.Bicicletas.Add(nuevaBici);
                 await _context.SaveChangesAsync();
 
-                // Devolvemos el DTO con el ID generado por la DB
                 biciDto.BicicletaId = nuevaBici.BicicletaId;
                 return CreatedAtAction(nameof(GetBicicleta), new { id = nuevaBici.BicicletaId }, biciDto);
             }
