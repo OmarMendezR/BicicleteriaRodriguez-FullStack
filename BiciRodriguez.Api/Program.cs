@@ -1,5 +1,6 @@
-using Microsoft.EntityFrameworkCore;
 using BiciRodriguez.Api.Models; // Importa tus tablas (Bicicleta, Cliente, etc.)
+using Microsoft.EntityFrameworkCore;
+using BiciRodriguez.Api.Services; // Importa tus servicios personalizados (BicicletasService)
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,7 +45,14 @@ builder.Services.AddCors(options =>
 
 // ----------------------------------------------------------------------------------
 #endregion
+#region 1.5 CONFIGURACIÓN DE SERVICIOS PERSONALIZADOS (Inyección de Dependencias)
 
+builder.Services.AddScoped<IBicicletasService, BicicletasService>();
+builder.Services.AddScoped<IClientesService, ClientesService>();
+builder.Services.AddScoped<IFichasService, FichasService>();
+builder.Services.AddScoped<IProductosService, ProductosService>();
+
+#endregion
 var app = builder.Build();
 
 #region 2. PIPELINE DE MIDDLEWARE (Configuración de Red)
