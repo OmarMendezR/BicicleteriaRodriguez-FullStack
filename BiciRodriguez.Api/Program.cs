@@ -51,6 +51,7 @@ builder.Services.AddScoped<IBicicletasService, BicicletasService>();
 builder.Services.AddScoped<IClientesService, ClientesService>();
 builder.Services.AddScoped<IFichasService, FichasService>();
 builder.Services.AddScoped<IProductosService, ProductosService>();
+builder.Services.AddScoped<IUsuariosService, UsuariosService>();
 
 #endregion
 var app = builder.Build();
