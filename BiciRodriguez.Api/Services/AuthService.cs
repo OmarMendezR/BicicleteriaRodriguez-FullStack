@@ -1,4 +1,5 @@
-﻿using BiciRodriguez.Api.Models;
+﻿using BiciRodriguez.Api.DTOs;
+using BiciRodriguez.Api.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -20,45 +21,60 @@ namespace BiciRodriguez.Api.Services
 
         public async Task<string?> LoginAsync(string email, string password)
         {
-            // 1. Buscar al usuario por email
             var usuario = await _context.Usuarios.Include(u => u.Rol)
                 .FirstOrDefaultAsync(u => u.Email == email && (u.Activo ?? false));
 
             if (usuario == null) return null;
 
-            // 2. Verificar la contraseña (El 20% de Pareto: Comparar el Hash)
-            // BCrypt.Verify toma la clave plana y la compara con el hash de la DB
-            if (!BCrypt.Net.BCrypt.Verify(password, usuario.PasswordHash))
-                return null;
+            bool esValida = BCrypt.Net.BCrypt.Verify(password, usuario.PasswordHash);
+            if (!esValida) return null;
 
-            // 3. Si todo está bien, generar el "Brazalete" (JWT)
             return GenerarToken(usuario);
         }
 
         private string GenerarToken(Usuario usuario)
         {
-            // Los "Claims" son los datos que van dentro del brazalete
-            var claims = new[]
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]!);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
             {
-                new Claim(ClaimTypes.NameIdentifier, usuario.UsuarioId.ToString()),
-                new Claim(ClaimTypes.Email, usuario.Email),
-                new Claim(ClaimTypes.Role, usuario.Rol.Nombre),
-                new Claim("id", usuario.UsuarioId.ToString()) // Este es el que usaremos en los controladores
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(JwtRegisteredClaimNames.Sub, usuario.UsuarioId.ToString()),
+                    new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    new Claim("id", usuario.UsuarioId.ToString()),
+                    new Claim("role", usuario.Rol.Nombre)
+                }),
+                Expires = DateTime.UtcNow.AddHours(8),
+                Issuer = _config["Jwt:Issuer"],
+                Audience = _config["Jwt:Audience"],
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature)
             };
 
-            // La "Key" es la firma secreta para que nadie falsifique el token
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
 
-            var token = new JwtSecurityToken(
-                issuer: _config["Jwt:Issuer"],
-                audience: _config["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddHours(8), // El brazalete dura 8 horas
-                signingCredentials: creds
-            );
+        public async Task<bool> RegisterAsync(RegisterDto registerDto)
+        {
+            if (await _context.Usuarios.AnyAsync(u => u.Email == registerDto.Email))
+                return false;
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            var usuario = new Usuario
+            {
+                NombreCompleto = registerDto.NombreCompleto,
+                Email = registerDto.Email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
+                RolId = registerDto.RolID,
+                Activo = true
+            };
+
+            _context.Usuarios.Add(usuario);
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }

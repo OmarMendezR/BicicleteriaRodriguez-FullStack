@@ -1,11 +1,13 @@
 ﻿using BiciRodriguez.Api.DTOs;
 using BiciRodriguez.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BiciRodriguez.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class BicicletasController : ControllerBase
     {
         private readonly IBicicletasService _service;
@@ -62,8 +64,14 @@ namespace BiciRodriguez.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<BicicletaResponseDto>> PostBicicleta(BicicletaResponseDto biciDto)
         {
-            // Extraer identidad (Preparamos para Token, por ahora default 1)
-            var userIdClaim = User.FindFirst("id")?.Value ?? "1";
+            // Extraer la identidad real del token
+            var userIdClaim = User.FindFirst("id")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized(new { mensaje = "El ID de usuario no está presente en el token." });
+            }
+
             int currentUserId = int.Parse(userIdClaim);
 
             try

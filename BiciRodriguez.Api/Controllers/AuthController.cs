@@ -28,5 +28,14 @@ namespace BiciRodriguez.Api.Controllers
 
             return Ok(new { token });
         }
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
+        {
+            var resultado = await _authService.RegisterAsync(registerDto);
+            if (!resultado)
+                return BadRequest(new { mensaje = "El correo ya existe o hubo un error." });
+
+            return Ok(new { mensaje = "Usuario registrado con éxito." });
+        }
     }
 }
