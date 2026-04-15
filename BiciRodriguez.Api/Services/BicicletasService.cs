@@ -1,5 +1,6 @@
 ﻿using BiciRodriguez.Api.Models;
 using BiciRodriguez.Api.DTOs;
+using BiciRodriguez.Api.Mappings;
 using Microsoft.EntityFrameworkCore;
 
 namespace BiciRodriguez.Api.Services
@@ -13,105 +14,70 @@ namespace BiciRodriguez.Api.Services
             _context = context;
         }
 
-        #region METODOS DE LECTURA
+        #region READ METHODS
         public async Task<IEnumerable<BicicletaResponseDto>> GetAllAsync()
         {
-            return await _context.Bicicletas
-                .Select(b => new BicicletaResponseDto
-                {
-                    BicicletaId = b.BicicletaId,
-                    Marca = b.Marca,
-                    NumeroMarco = b.NumeroMarco,
-                    ClienteId = b.ClienteId,
-                    Color = b.Color,
-                    TipoBicicleta = b.TipoBicicleta
-                }).ToListAsync();
+            var bicicletas = await _context.Bicicletas.ToListAsync();
+            return bicicletas.Select(b => b.ToDto());
         }
 
         public async Task<BicicletaResponseDto?> GetByIdAsync(int id)
         {
             var b = await _context.Bicicletas.FindAsync(id);
-            if (b == null) return null;
-
-            return new BicicletaResponseDto
-            {
-                BicicletaId = b.BicicletaId,
-                Marca = b.Marca,
-                NumeroMarco = b.NumeroMarco,
-                ClienteId = b.ClienteId,
-                Color = b.Color,
-                TipoBicicleta = b.TipoBicicleta
-            };
+            return b?.ToDto();
         }
 
         public async Task<IEnumerable<BicicletaResponseDto>> GetByClienteIdAsync(int clienteId)
         {
-            return await _context.Bicicletas
+            var bicicletas = await _context.Bicicletas
                 .Where(b => b.ClienteId == clienteId)
-                .Select(b => new BicicletaResponseDto
-                {
-                    BicicletaId = b.BicicletaId,
-                    Marca = b.Marca,
-                    NumeroMarco = b.NumeroMarco,
-                    ClienteId = b.ClienteId,
-                    Color = b.Color,
-                    TipoBicicleta = b.TipoBicicleta
-                }).ToListAsync();
+                .ToListAsync();
+
+            return bicicletas.Select(b => b.ToDto());
         }
         #endregion
 
-        #region METODOS DE ESCRITURA
+        #region WRITE METHODS
         public async Task<BicicletaResponseDto> CreateAsync(BicicletaResponseDto biciDto, int userId)
         {
-            bool existeMarco = await _context.Bicicletas.AnyAsync(b => b.NumeroMarco == biciDto.NumeroMarco);
-            if (existeMarco) throw new Exception($"El número de marco '{biciDto.NumeroMarco}' ya está registrado.");
+            // Validar unicidad del marco
+            if (await _context.Bicicletas.AnyAsync(b => b.NumeroMarco == biciDto.NumeroMarco))
+                throw new Exception($"El número de marco '{biciDto.NumeroMarco}' ya existe.");
 
-            var nuevaBici = new Bicicleta
-            {
-                Marca = biciDto.Marca,
-                NumeroMarco = biciDto.NumeroMarco,
-                ClienteId = (biciDto.ClienteId == 0) ? null : biciDto.ClienteId,
-                Color = string.IsNullOrWhiteSpace(biciDto.Color) ? "N/A" : biciDto.Color,
-                TipoBicicleta = string.IsNullOrWhiteSpace(biciDto.TipoBicicleta) ? "General" : biciDto.TipoBicicleta,
-                Modelo = "N/A",
-                FechaRegistro = DateTime.UtcNow,
-                UltimaModificacion = DateTime.UtcNow,
-                CreadoPorUsuarioId = userId
-            };
+            var nuevaBici = biciDto.ToEntity(userId);
 
             _context.Bicicletas.Add(nuevaBici);
             await _context.SaveChangesAsync();
 
-            biciDto.BicicletaId = nuevaBici.BicicletaId;
-            return biciDto;
+            return nuevaBici.ToDto();
         }
 
         public async Task<bool> UpdateAsync(int id, BicicletaResponseDto biciDto)
         {
-            var bicicletaExistente = await _context.Bicicletas.FindAsync(id);
-            if (bicicletaExistente == null) return false;
+            var existente = await _context.Bicicletas.FindAsync(id);
+            if (existente == null) return false;
 
-            // BLINDAJE: Validar Cliente si existe
+            // Validar cliente si se proporciona uno nuevo
             if (biciDto.ClienteId.HasValue && biciDto.ClienteId != 0)
             {
-                var clienteExiste = await _context.Clientes.AnyAsync(c => c.ClienteId == biciDto.ClienteId);
-                if (!clienteExiste) throw new Exception($"El Cliente ID {biciDto.ClienteId} no existe.");
+                if (!await _context.Clientes.AnyAsync(c => c.ClienteId == biciDto.ClienteId))
+                    throw new Exception($"El Cliente ID {biciDto.ClienteId} no existe.");
             }
 
-            // BLINDAJE: Validar duplicado de marco
-            if (bicicletaExistente.NumeroMarco != biciDto.NumeroMarco)
+            // Validar que el nuevo marco no lo tenga otra bicicleta
+            if (existente.NumeroMarco != biciDto.NumeroMarco)
             {
-                bool marcoEnUso = await _context.Bicicletas
-                    .AnyAsync(b => b.NumeroMarco == biciDto.NumeroMarco && b.BicicletaId != id);
-                if (marcoEnUso) throw new Exception("El nuevo número de marco ya pertenece a otra bicicleta.");
+                if (await _context.Bicicletas.AnyAsync(b => b.NumeroMarco == biciDto.NumeroMarco && b.BicicletaId != id))
+                    throw new Exception("El número de marco ya pertenece a otra unidad.");
             }
 
-            bicicletaExistente.Marca = biciDto.Marca;
-            bicicletaExistente.NumeroMarco = biciDto.NumeroMarco;
-            bicicletaExistente.ClienteId = (biciDto.ClienteId == 0) ? null : biciDto.ClienteId;
-            bicicletaExistente.Color = string.IsNullOrWhiteSpace(biciDto.Color) ? "N/A" : biciDto.Color;
-            bicicletaExistente.TipoBicicleta = string.IsNullOrWhiteSpace(biciDto.TipoBicicleta) ? "General" : biciDto.TipoBicicleta;
-            bicicletaExistente.UltimaModificacion = DateTime.UtcNow;
+            // Actualización de campos
+            existente.Marca = biciDto.Marca;
+            existente.NumeroMarco = biciDto.NumeroMarco;
+            existente.ClienteId = (biciDto.ClienteId == 0) ? null : biciDto.ClienteId;
+            existente.Color = string.IsNullOrWhiteSpace(biciDto.Color) ? "N/A" : biciDto.Color;
+            existente.TipoBicicleta = string.IsNullOrWhiteSpace(biciDto.TipoBicicleta) ? "General" : biciDto.TipoBicicleta;
+            existente.UltimaModificacion = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return true;
@@ -119,18 +85,18 @@ namespace BiciRodriguez.Api.Services
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var bicicleta = await _context.Bicicletas.FindAsync(id);
-            if (bicicleta == null) return false;
+            var b = await _context.Bicicletas.FindAsync(id);
+            if (b == null) return false;
 
             try
             {
-                _context.Bicicletas.Remove(bicicleta);
+                _context.Bicicletas.Remove(b);
                 await _context.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
             {
-                throw new Exception("No se puede eliminar la bicicleta porque tiene registros relacionados (fichas, mantenimientos, etc).", ex);
+                throw new Exception("Error: El registro tiene dependencias activas (fichas o mantenimientos).", ex);
             }
         }
         #endregion
