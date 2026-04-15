@@ -45,7 +45,7 @@ public partial class BiciContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        // Vacío: La conexión se manejará desde Program.cs por seguridad
+        
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -173,23 +173,23 @@ public partial class BiciContext : DbContext
 
         modelBuilder.Entity<DetalleRepuesto>(entity =>
         {
-            entity.HasKey(e => e.DetalleInsumoId).HasName("PK__DetalleO__5C143EBCD301207F");
+            entity.HasKey(e => e.DetalleInsumoId).HasName("PK__DetalleR__55331A19D7A68C1C"); // Tu PK actual
 
             entity.Property(e => e.DetalleInsumoId).HasColumnName("DetalleInsumoID");
-            entity.Property(e => e.DiasGarantia).HasDefaultValue(30);
             entity.Property(e => e.FichaId).HasColumnName("FichaID");
-            entity.Property(e => e.NumeroSerial).HasMaxLength(100);
             entity.Property(e => e.ProductoId).HasColumnName("ProductoID");
+
+            // AGREGA ESTA LÍNEA PARA EL PRECIO HISTÓRICO
+            entity.Property(e => e.PrecioVentaHistorico).HasColumnType("decimal(18, 2)");
 
             entity.HasOne(d => d.Ficha).WithMany(p => p.DetalleRepuestos)
                 .HasForeignKey(d => d.FichaId)
-                .HasConstraintName("FK__DetalleOr__Orden__5070F446");
+                .HasConstraintName("FK__DetalleRe__Ficha__6EF57B66");
 
             entity.HasOne(d => d.Producto).WithMany(p => p.DetalleRepuestos)
                 .HasForeignKey(d => d.ProductoId)
-                .HasConstraintName("FK__DetalleOr__Produ__5165187F");
+                .HasConstraintName("FK__DetalleRe__Produ__6FE99F9F");
         });
-
         modelBuilder.Entity<FichasIngreso>(entity =>
         {
             entity.HasKey(e => e.FichaId).HasName("PK__OrdenesS__C088A4E49BED0377");
