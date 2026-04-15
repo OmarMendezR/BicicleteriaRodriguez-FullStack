@@ -1,5 +1,6 @@
 ﻿using BiciRodriguez.Api.Models;
 using BiciRodriguez.Api.DTOs;
+using BiciRodriguez.Api.Mappings;
 using Microsoft.EntityFrameworkCore;
 
 namespace BiciRodriguez.Api.Services
@@ -8,58 +9,27 @@ namespace BiciRodriguez.Api.Services
     {
         private readonly BiciContext _context;
 
-        public ClientesService(BiciContext context)
-        {
-            _context = context;
-        }
+        public ClientesService(BiciContext context) => _context = context;
 
         public async Task<IEnumerable<ClienteDto>> GetAllAsync()
         {
-            return await _context.Clientes
-                .Select(c => new ClienteDto
-                {
-                    ClienteId = c.ClienteId,
-                    Nombre = c.NombreCompleto,
-                    Telefono = c.Telefono ?? string.Empty,
-                    Correo = c.Email ?? string.Empty,
-                    Direccion = c.Direccion ?? string.Empty
-                }).ToListAsync();
+            var clientes = await _context.Clientes.ToListAsync();
+            return clientes.Select(c => c.ToDto());
         }
 
         public async Task<ClienteDto?> GetByIdAsync(int id)
         {
             var c = await _context.Clientes.FindAsync(id);
-            if (c == null) return null;
-
-            return new ClienteDto
-            {
-                ClienteId = c.ClienteId,
-                Nombre = c.NombreCompleto,
-                Telefono = c.Telefono ?? string.Empty,
-                Correo = c.Email ?? string.Empty,
-                Direccion = c.Direccion ?? string.Empty
-            };
+            return c?.ToDto();
         }
 
         public async Task<ClienteDto> CreateAsync(ClienteDto dto, int userId)
         {
-            var nuevoCliente = new Cliente
-            {
-                NombreCompleto = $"{dto.Nombre} {dto.Apellido}".Trim(),
-                Telefono = dto.Telefono,
-                Email = dto.Correo,
-                Direccion = dto.Direccion,
-                FechaRegistro = DateTime.UtcNow,
-                Activo = true,
-                AutorizaDatos = true,
-                CreadoPorUsuarioId = userId
-            };
-
+            var nuevoCliente = dto.ToEntity(userId);
             _context.Clientes.Add(nuevoCliente);
             await _context.SaveChangesAsync();
 
-            dto.ClienteId = nuevoCliente.ClienteId;
-            return dto;
+            return nuevoCliente.ToDto();
         }
 
         public async Task<bool> UpdateAsync(int id, ClienteDto dto)
@@ -82,12 +52,8 @@ namespace BiciRodriguez.Api.Services
             var cliente = await _context.Clientes.FindAsync(id);
             if (cliente == null) return false;
 
-            // REGLA DE NEGOCIO: No borrar clientes con bicicletas vinculadas
-            var tieneBicis = await _context.Bicicletas.AnyAsync(b => b.ClienteId == id);
-            if (tieneBicis)
-            {
+            if (await _context.Bicicletas.AnyAsync(b => b.ClienteId == id))
                 throw new Exception("No se puede eliminar: Este cliente tiene bicicletas registradas.");
-            }
 
             _context.Clientes.Remove(cliente);
             await _context.SaveChangesAsync();
