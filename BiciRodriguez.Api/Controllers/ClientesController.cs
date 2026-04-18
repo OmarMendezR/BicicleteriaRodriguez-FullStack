@@ -1,70 +1,63 @@
 ﻿using BiciRodriguez.Api.DTOs;
 using BiciRodriguez.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BiciRodriguez.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize] // Protegido globalmente
     public class ClientesController : ControllerBase
     {
         private readonly IClientesService _service;
 
-        public ClientesController(IClientesService service)
-        {
-            _service = service;
-        }
+        public ClientesController(IClientesService service) => _service = service;
 
-        #region METODOS DE LECTURA (GET)
+        #region READ
         [HttpGet]
+        [Authorize(Roles = "Administrador,Mecanico")]
         public async Task<ActionResult<IEnumerable<ClienteDto>>> GetClientes()
-        {
-            var clientes = await _service.GetAllAsync();
-            return Ok(clientes);
-        }
+            => Ok(await _service.GetAllAsync());
 
         [HttpGet("{id}")]
         public async Task<ActionResult<ClienteDto>> GetCliente(int id)
         {
             var cliente = await _service.GetByIdAsync(id);
-            if (cliente == null) return NotFound(new { mensaje = $"El cliente {id} no existe." });
-            return Ok(cliente);
+            return cliente == null ? NotFound(new { mensaje = "Cliente no encontrado" }) : Ok(cliente);
         }
         #endregion
 
-        #region METODOS DE ESCRITURA (POST, PUT)
+        #region WRITE
         [HttpPost]
+        [Authorize(Roles = "Administrador,Mecanico")]
         public async Task<ActionResult<ClienteDto>> PostCliente(ClienteDto dto)
         {
-            var userIdClaim = User.FindFirst("id")?.Value ?? "1";
-            int currentUserId = int.Parse(userIdClaim);
+            var userIdClaim = User.FindFirst("id")?.Value;
+            if (!int.TryParse(userIdClaim, out int currentUserId))
+                return Unauthorized(new { mensaje = "Token inválido" });
 
             var resultado = await _service.CreateAsync(dto, currentUserId);
             return CreatedAtAction(nameof(GetCliente), new { id = resultado.ClienteId }, resultado);
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Administrador,Mecanico")]
         public async Task<IActionResult> PutCliente(int id, ClienteDto dto)
         {
-            if (id != dto.ClienteId) return BadRequest("ID mismatch.");
+            if (id != dto.ClienteId) return BadRequest(new { mensaje = "ID mismatch" });
 
             var actualizado = await _service.UpdateAsync(id, dto);
-            if (!actualizado) return NotFound();
-
-            return NoContent();
+            return actualizado ? NoContent() : NotFound();
         }
-        #endregion
 
-        #region METODOS DE ELIMINACION (DELETE)
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Administrador")] // Solo Admin elimina clientes
         public async Task<IActionResult> DeleteCliente(int id)
         {
             try
             {
-                var eliminado = await _service.DeleteAsync(id);
-                if (!eliminado) return NotFound();
-
-                return Ok(new { mensaje = "Client deleted successfully." });
+                return await _service.DeleteAsync(id) ? Ok(new { mensaje = "Eliminado" }) : NotFound();
             }
             catch (Exception ex)
             {
