@@ -1,3 +1,4 @@
+using BiciRodriguez.Api.Interfaces;
 using BiciRodriguez.Api.Models;
 using BiciRodriguez.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -89,6 +90,7 @@ builder.Services.AddScoped<IFichasService, FichasService>();
 builder.Services.AddScoped<IProductosService, ProductosService>();
 builder.Services.AddScoped<IUsuariosService, UsuariosService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IComprasService, ComprasService>();
 
 #endregion
 

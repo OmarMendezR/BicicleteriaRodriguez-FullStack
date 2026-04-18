@@ -9,7 +9,7 @@ namespace BiciRodriguez.Api.Services
     {
         private readonly BiciContext _context;
         public FichasService(BiciContext context) => _context = context;
-
+        #region SERVICIOS DE FICHAS DE INGRESO
         public async Task<IEnumerable<FichaIngresoResponseDto>> GetAllAsync()
         {
             var fichas = await _context.FichasIngresos
@@ -84,17 +84,26 @@ namespace BiciRodriguez.Api.Services
 
         public async Task<bool> AddRepuestoAsync(DetalleRepuestoCreateDto dto)
         {
+            // 1. Buscar el producto para validar stock y obtener precio
             var producto = await _context.Productos.FindAsync(dto.ProductoId);
             if (producto == null) throw new Exception("Producto no encontrado.");
 
+            if (producto.StockActual < dto.Cantidad)
+                throw new Exception($"Stock insuficiente. Disponible: {producto.StockActual}");
+
+            // 2. Restar del inventario
+            producto.StockActual -= dto.Cantidad;
+            producto.UltimaModificacion = DateTime.UtcNow;
+
+            // 3. Registrar el detalle
             var detalle = new DetalleRepuesto
             {
                 FichaId = dto.FichaId,
                 ProductoId = dto.ProductoId,
                 Cantidad = dto.Cantidad,
-                PrecioVentaHistorico = producto.PrecioVenta, // La nueva columna mágica
-                NumeroSerial = dto.NumeroSerial ?? "N/A",    // Ahora sí existe en el DTO
-                DiasGarantia = dto.DiasGarantia ?? 30        // Ahora sí existe en el DTO
+                PrecioVentaHistorico = producto.PrecioVenta,
+                NumeroSerial = dto.NumeroSerial ?? "N/A",
+                DiasGarantia = dto.DiasGarantia ?? 30
             };
 
             _context.DetalleRepuestos.Add(detalle);
@@ -127,5 +136,23 @@ namespace BiciRodriguez.Api.Services
             await _context.SaveChangesAsync();
             return true;
         }
+#endregion
+
+        #region SERVICIOS DE CAJA
+        public async Task<decimal> GetIngresosDelDiaAsync(DateTime fecha)
+        {
+            // Suma de repuestos usados en fichas hoy
+            var totalRepuestos = await _context.DetalleRepuestos
+                .Where(dr => dr.Ficha.FechaEntrada.Value.Date == fecha.Date)
+                .SumAsync(dr => dr.Cantidad * dr.PrecioVentaHistorico);
+
+            // Suma de mano de obra cobrada hoy
+            var totalManoObra = await _context.DetalleManoObras
+                .Where(dm => dm.Ficha.FechaEntrada.Value.Date == fecha.Date)
+                .SumAsync(dm => dm.PrecioCobrado);
+
+            return totalRepuestos + totalManoObra;
+        }
+        #endregion
     }
 }
