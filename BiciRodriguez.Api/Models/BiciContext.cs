@@ -37,8 +37,7 @@ public partial class BiciContext : DbContext
 
     public virtual DbSet<Producto> Productos { get; set; }
 
-    public virtual DbSet<Proveedore> Proveedores { get; set; }
-
+    public virtual DbSet<Proveedor> Proveedores { get; set; }
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<Usuario> Usuarios { get; set; }
@@ -302,8 +301,9 @@ public partial class BiciContext : DbContext
                 .HasConstraintName("FK__Productos__Prove__4222D4EF");
         });
 
-        modelBuilder.Entity<Proveedore>(entity =>
+        modelBuilder.Entity<Proveedor>(entity =>
         {
+            entity.ToTable("Proveedores");
             entity.HasKey(e => e.ProveedorId).HasName("PK__Proveedo__61266BB9D0F0BCB1");
 
             entity.HasIndex(e => e.Nit, "UQ_Proveedor_NIT").IsUnique();
