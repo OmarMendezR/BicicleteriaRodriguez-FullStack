@@ -1,6 +1,7 @@
 using BiciRodriguez.Api.Interfaces;
 using BiciRodriguez.Api.Models;
 using BiciRodriguez.Api.Services;
+using BiciRodriguez.Api.Workers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -91,6 +92,10 @@ builder.Services.AddScoped<IProductosService, ProductosService>();
 builder.Services.AddScoped<IUsuariosService, UsuariosService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IComprasService, ComprasService>();
+builder.Services.AddScoped<IBalancesService, BalancesService>();
+builder.Services.AddHostedService<CierreCajaWorker>();
+builder.Services.AddScoped<ICategoriasService, CategoriasService>();
+builder.Services.AddScoped<IProveedoresService, ProveedoresService>();
 
 #endregion
 

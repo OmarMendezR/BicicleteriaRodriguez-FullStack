@@ -37,5 +37,5 @@ public partial class Producto
 
     public virtual ICollection<DetalleRepuesto> DetalleRepuestos { get; set; } = new List<DetalleRepuesto>();
 
-    public virtual Proveedore? Proveedor { get; set; }
+    public virtual Proveedor? Proveedor { get; set; }
 }

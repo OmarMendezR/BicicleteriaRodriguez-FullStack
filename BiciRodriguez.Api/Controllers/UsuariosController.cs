@@ -1,11 +1,13 @@
 ﻿using BiciRodriguez.Api.Models;
 using BiciRodriguez.Api.Services;
+using Microsoft.AspNetCore.Authorization; // Agregado
 using Microsoft.AspNetCore.Mvc;
 
 namespace BiciRodriguez.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Administrador")] // Seguridad total: Solo el jefe gestiona usuarios
     public class UsuariosController : ControllerBase
     {
         private readonly IUsuariosService _service;

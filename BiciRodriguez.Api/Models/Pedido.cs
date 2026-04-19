@@ -17,5 +17,5 @@ public partial class Pedido
 
     public virtual ICollection<DetallePedido> DetallePedidos { get; set; } = new List<DetallePedido>();
 
-    public virtual Proveedore? Proveedor { get; set; }
+    public virtual Proveedor? Proveedor { get; set; }
 }
