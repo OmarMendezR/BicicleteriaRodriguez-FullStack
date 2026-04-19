@@ -42,6 +42,7 @@ public partial class BiciContext : DbContext
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<Usuario> Usuarios { get; set; }
+    public virtual DbSet<Balance> Balances { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -190,6 +191,7 @@ public partial class BiciContext : DbContext
                 .HasForeignKey(d => d.ProductoId)
                 .HasConstraintName("FK__DetalleRe__Produ__6FE99F9F");
         });
+
         modelBuilder.Entity<FichasIngreso>(entity =>
         {
             entity.HasKey(e => e.FichaId).HasName("PK__OrdenesS__C088A4E49BED0377");
@@ -343,6 +345,35 @@ public partial class BiciContext : DbContext
                 .HasForeignKey(d => d.RolId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Usuarios__RolID__45F365D3");
+        });
+
+        modelBuilder.Entity<Balance>(entity =>
+        {
+            entity.ToTable(tb => tb.HasTrigger("tr_BloquearModificacionBalances"));
+
+            entity.HasIndex(e => new { e.Fecha, e.Tipo }, "UQ_Balance_Fecha_Tipo").IsUnique();
+
+            entity.Property(e => e.FechaCreacion)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.Property(e => e.IngresosRepuestos)
+                .HasDefaultValue(0m)
+                .HasColumnType("decimal(18, 2)");
+
+            entity.Property(e => e.IngresosServicios)
+                .HasDefaultValue(0m)
+                .HasColumnType("decimal(18, 2)");
+
+            entity.Property(e => e.Tipo).HasMaxLength(20);
+
+            entity.Property(e => e.TotalEgresos)
+                .HasDefaultValue(0m)
+                .HasColumnType("decimal(18, 2)");
+
+            entity.Property(e => e.UtilidadNeta)
+                .HasComputedColumnSql("(([IngresosServicios]+[IngresosRepuestos])-[TotalEgresos])", false)
+                .HasColumnType("decimal(20, 2)");
         });
 
         OnModelCreatingPartial(modelBuilder);
