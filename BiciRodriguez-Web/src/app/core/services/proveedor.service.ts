@@ -5,7 +5,7 @@ import { Proveedor } from '../../models/proveedor.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProveedorService {
-  private readonly API_URL = 'https://localhost:7046/api/Proveedores'; 
+  private readonly API_URL = 'http://localhost:5062/api/Proveedores'; 
 
   constructor(private http: HttpClient) { }
 

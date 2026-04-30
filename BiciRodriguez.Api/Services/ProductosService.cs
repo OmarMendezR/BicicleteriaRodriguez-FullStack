@@ -24,11 +24,11 @@ namespace BiciRodriguez.Api.Services
                     PrecioCompra = p.PrecioCompra,
                     PrecioVenta = p.PrecioVenta,
                     Stock = p.StockActual ?? 0,
-                    // AGREGA ESTA LÍNEA:
                     StockMinimo = p.StockMinimo ?? 5,
                     CategoriaId = p.CategoriaId,
                     NombreCategoria = p.Categoria != null ? p.Categoria.Nombre : "Sin Categoría",
-                    ProveedorId = p.ProveedorId ?? 0,
+                    // CAMBIO AQUÍ: Quita el ?? 0. Deja que pase el null original.
+                    ProveedorId = p.ProveedorId,
                     Activo = p.Activo ?? false
                 })
                 .ToListAsync();
@@ -50,7 +50,7 @@ namespace BiciRodriguez.Api.Services
                 FechaRegistro = DateTime.UtcNow,
                 UltimaModificacion = DateTime.UtcNow,
                 CreadoPorUsuarioId = userId,
-                ProveedorId = dto.ProveedorId
+                ProveedorId = (dto.ProveedorId <= 0) ? null : dto.ProveedorId
             };
 
             _context.Productos.Add(nuevoProducto);
@@ -73,7 +73,7 @@ namespace BiciRodriguez.Api.Services
             producto.StockActual = dto.Stock;
             producto.StockMinimo = dto.StockMinimo;
             producto.CategoriaId = (dto.CategoriaId <= 0) ? null : dto.CategoriaId;
-            producto.ProveedorId = dto.ProveedorId;
+            producto.ProveedorId = (dto.ProveedorId <= 0) ? null : dto.ProveedorId;
             producto.Activo = dto.Activo;
             producto.UltimaModificacion = DateTime.UtcNow;
 

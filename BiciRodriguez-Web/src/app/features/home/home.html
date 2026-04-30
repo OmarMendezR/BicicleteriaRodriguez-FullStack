@@ -1,0 +1,45 @@
+<div class="container mt-4">
+  <div class="jumbotron bg-light p-5 rounded-3 border">
+    <h1 class="display-4">¡Bienvenido, {{ nombreUsuario }}!</h1>
+    <p class="lead">Sistema de Gestión - Bici Rodríguez</p>
+    <hr class="my-4">
+
+    <!-- SECCIÓN PARA ADMINISTRADOR -->
+    <div *ngIf="rol === 'Administrador'" class="row">
+      <div class="col-md-12">
+        <div class="card border-danger mb-3">
+          <div class="card-header bg-danger text-white">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> Alerta de Inventario
+          </div>
+          <div class="card-body">
+            <h5 class="card-title">Productos con Bajo Stock</h5>
+            <p class="card-text">Tienes productos que han alcanzado el límite mínimo. Es necesario realizar pedidos.</p>
+            <!-- Enlace de navegación directo al inventario -->
+            <a class="btn btn-danger" routerLink="/inventario">Ver Inventario</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN PARA MECÁNICO -->
+    <div *ngIf="rol === 'Mecanico'" class="row">
+      <div class="col-md-12">
+        <div class="card border-primary mb-3">
+          <div class="card-header bg-primary text-white">
+            <i class="bi bi-tools me-2"></i> Taller
+          </div>
+          <div class="card-body">
+            <h5 class="card-title">Mantenimientos en Proceso</h5>
+            <p class="card-text">Tienes 3 bicicletas en espera de repuestos y 2 listas para entrega.</p>
+            <button class="btn btn-primary">Ir a Mantenimientos</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA GENERAL (Vendedor u otros) -->
+    <div *ngIf="rol !== 'Administrador' && rol !== 'Mecanico'">
+      <p>Selecciona una opción en el menú superior para comenzar.</p>
+    </div>
+  </div>
+</div>

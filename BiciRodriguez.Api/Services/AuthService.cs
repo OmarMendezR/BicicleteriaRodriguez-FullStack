@@ -64,12 +64,15 @@ namespace BiciRodriguez.Api.Services
             if (await _context.Usuarios.AnyAsync(u => u.Email == registerDto.Email))
                 return false;
 
+            // buscamos el ID del rol "Mecanico" o asignamos el 2 por defecto.
+            int rolAsignado = registerDto.RolID > 0 ? registerDto.RolID : 2;
+
             var usuario = new Usuario
             {
                 NombreCompleto = registerDto.NombreCompleto,
                 Email = registerDto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
-                RolId = registerDto.RolID,
+                RolId = rolAsignado,
                 Activo = true
             };
 
