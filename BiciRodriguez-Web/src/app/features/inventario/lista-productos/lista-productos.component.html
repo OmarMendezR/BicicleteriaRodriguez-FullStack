@@ -1,0 +1,129 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between mb-4 align-items-center">
+    <h2 class="fw-bold text-dark mb-0">Inventario BiciRodriguez</h2>
+    <button (click)="prepararNuevo()" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalProducto">
+      <i class="bi bi-plus-circle me-2"></i>Nuevo Repuesto
+    </button>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th>Nombre</th>
+            <th>Precios (C/V)</th>
+            <th>Stock (Act/Min)</th>
+            <th>Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of productos">
+            <td>
+              <div class="fw-bold">{{ p.nombre }}</div>
+              <small class="text-muted">Cat: {{ p.nombreCategoria || 'Sin categoría' }}</small>
+            </td>
+            <td>
+              <small class="d-block text-muted">C: ${{ p.precioCompra | number }}</small>
+              <span class="text-success fw-bold">V: ${{ p.precioVenta | number }}</span>
+            </td>
+            <td>
+              <span [ngClass]="p.stock <= p.stockMinimo ? 'badge bg-danger' : 'badge bg-info text-dark'">
+                {{ p.stock }} / {{ p.stockMinimo }}
+              </span>
+            </td>
+            <td>
+              <i [ngClass]="p.activo ? 'bi bi-check-circle-fill text-success' : 'bi bi-x-circle-fill text-secondary'"></i>
+            </td>
+            <td class="text-center">
+              <button (click)="prepararEdicion(p)" class="btn btn-sm btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#modalProducto">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button (click)="onEliminar(p.productoId)" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalProducto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg border-0">
+      <div class="modal-content shadow">
+        <div class="modal-header bg-primary text-white border-0">
+          <h5 class="modal-title fw-bold">{{ productoSeleccionado.productoId === 0 ? 'Registrar' : 'Editar' }} Producto</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form #f="ngForm" (ngSubmit)="onGuardar()">
+          <div class="modal-body p-4">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label fw-semibold">Nombre del Repuesto</label>
+                <input type="text" class="form-control" name="nombre" [(ngModel)]="productoSeleccionado.nombre" required>
+              </div>
+              
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Precio de Compra</label>
+                <input type="number" class="form-control" name="pCompra" [(ngModel)]="productoSeleccionado.precioCompra">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Precio de Venta</label>
+                <input type="number" class="form-control" name="pVenta" [(ngModel)]="productoSeleccionado.precioVenta">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Stock Actual</label>
+                <input type="number" class="form-control" name="stock" [(ngModel)]="productoSeleccionado.stock">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Stock Mínimo (Alerta)</label>
+                <input type="number" class="form-control" name="stockMin" [(ngModel)]="productoSeleccionado.stockMinimo">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Categoría</label>
+                <select name="catId" class="form-select" [(ngModel)]="productoSeleccionado.categoriaId" required>
+                  <option [value]="0" disabled>Seleccione una categoría...</option>
+                  <option *ngFor="let cat of categorias" [value]="cat.categoriaId">
+                    {{ cat.nombre }}
+                  </option>
+                </select>
+                <small class="text-muted" *ngIf="categorias.length === 0">Cargando categorías...</small>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Proveedor</label>
+                <select name="provId" 
+                            class="form-select" 
+                            [(ngModel)]="productoSeleccionado.proveedorId" 
+                            required>
+                        <option [value]="0" disabled selected>Seleccione un proveedor...</option>
+                        <option *ngFor="let prov of proveedores" [value]="prov.proveedorId">
+                        {{ prov.nombre }}
+                        </option>
+                    </select>
+                    <small class="text-muted" *ngIf="proveedores.length === 0">Cargando proveedores...</small>
+                </div>
+
+              <div class="col-md-3 d-flex align-items-end">
+                <div class="form-check form-switch mb-2">
+                  <input class="form-check-input" type="checkbox" name="activo" [(ngModel)]="productoSeleccionado.activo">
+                  <label class="form-check-label fw-semibold">Activo</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer bg-light border-0">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary px-5" data-bs-dismiss="modal" [disabled]="!f.valid">
+              Confirmar Operación
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

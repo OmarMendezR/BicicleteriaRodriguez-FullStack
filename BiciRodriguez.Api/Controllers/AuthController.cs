@@ -1,6 +1,8 @@
 ﻿using BiciRodriguez.Api.DTOs;
 using BiciRodriguez.Api.Services;
+using BiciRodriguez.Api.Models; // 1. IMPORTANTE: Agregar este using para BiciContext
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace BiciRodriguez.Api.Controllers
 {
@@ -9,10 +11,13 @@ namespace BiciRodriguez.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly BiciContext _context; // 2. Declarar el campo privado
 
-        public AuthController(IAuthService authService)
+        // 3. Inyectar BiciContext en el constructor
+        public AuthController(IAuthService authService, BiciContext context)
         {
             _authService = authService;
+            _context = context;
         }
 
         [HttpPost("login")]
@@ -22,12 +27,24 @@ namespace BiciRodriguez.Api.Controllers
 
             if (token == null)
             {
-                // Por seguridad, no decimos si falló el correo o la clave, solo "No autorizado"
                 return Unauthorized(new { mensaje = "Credenciales incorrectas o usuario inactivo." });
             }
 
-            return Ok(new { token });
+            // 4. Ahora _context ya existe. Usamos Include para traer el nombre del Rol.
+            var usuario = await _context.Usuarios
+                .Include(u => u.Rol)
+                .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
+
+            if (usuario == null) return Unauthorized();
+
+            return Ok(new AuthResponseDto
+            {
+                Token = token,
+                Role = usuario.Rol?.Nombre ?? "Sin Rol", // Extraemos el nombre del rol
+                Nombre = usuario.NombreCompleto ?? "Usuario" // Usamos la propiedad de tu modelo
+            });
         }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
         {

@@ -3,7 +3,7 @@
     public class ProductoDto
     {
         public int ProductoId { get; set; }
-        public int ProveedorId { get; set; }
+        public int? ProveedorId { get; set; }
         public string Nombre { get; set; } = string.Empty;
         public decimal PrecioCompra { get; set; } 
         public decimal PrecioVenta { get; set; }

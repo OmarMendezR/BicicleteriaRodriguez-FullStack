@@ -1,0 +1,7 @@
+<!-- Inyectamos el componente Navbar que creamos en shared -->
+<app-navbar *ngIf="mostrarNavbar"></app-navbar>
+
+<!-- Contenedor principal para las páginas (Login, Inventario, Home) -->
+<main class="container mt-4">
+  <router-outlet></router-outlet>
+</main>
