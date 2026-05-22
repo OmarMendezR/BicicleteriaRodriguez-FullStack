@@ -17,6 +17,10 @@ export class AuthService {
       })
     );
   }
+  
+  register(dto: any): Observable<any> {
+  return this.http.post(`${this.URL}/register`, dto);
+}
 
   getToken(): string | null {
     return localStorage.getItem('bici_token');

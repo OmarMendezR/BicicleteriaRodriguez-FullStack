@@ -10,13 +10,13 @@
           <a class="nav-link" routerLink="/home" routerLinkActive="active">Inicio</a>
         </li>
         <!-- Validamos contra el nombre real del rol en la BD -->
-        <li class="nav-item" *ngIf="rol === 'Administrador' || rol === 'Vendedor'">
+        <li class="nav-item" *ngIf="authService.getRol() === 'Administrador' || authService.getRol() === 'Mecanico' || authService.getRol() === 'Vendedor'">
           <a class="nav-link" routerLink="/inventario" routerLinkActive="active">Inventario</a>
         </li>
       </ul>
 
       <div class="d-flex align-items-center gap-3">
-        <span class="badge bg-secondary">{{ rol }}</span>
+        <span class="badge bg-secondary">{{ authService.getRol() }}</span>
         <button class="btn btn-outline-light btn-sm" (click)="logout()">
           Cerrar Sesión
         </button>

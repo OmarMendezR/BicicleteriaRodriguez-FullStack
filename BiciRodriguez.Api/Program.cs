@@ -86,7 +86,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAngular",
         policy => policy.WithOrigins("http://localhost:4200")
                         .AllowAnyMethod()
-                        .AllowAnyHeader());
+                        .AllowAnyHeader()
+                        .AllowCredentials());
 });
 
 // --- Inyección de Dependencias (Business Logic) ---
@@ -114,8 +115,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Bicicletería Rodríguez v1"));
 }
 
-app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+//app.UseHttpsRedirection(); //descomentar para pasar a producción con SSL
+
 
 app.UseAuthentication();
 app.UseAuthorization();
