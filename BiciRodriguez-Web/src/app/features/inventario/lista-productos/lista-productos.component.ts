@@ -7,6 +7,7 @@ import { ProveedorService } from '../../../core/services/proveedor.service';
 import { Producto, inicializarProducto } from '../../../models/producto.model';
 import { Categoria } from '../../../models/categoria.model';
 import { Proveedor } from '../../../models/proveedor.model';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'br-lista-productos',
@@ -23,7 +24,8 @@ export class ListaProductosComponent implements OnInit {
   constructor(
     private productoService: ProductoService,
     private categoriaService: CategoriaService,
-    private proveedorService: ProveedorService
+    private proveedorService: ProveedorService,
+    public authService: AuthService  
   ) {}
 
   ngOnInit(): void {

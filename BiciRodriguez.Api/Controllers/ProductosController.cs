@@ -17,11 +17,12 @@ namespace BiciRodriguez.Api.Controllers
         #region METODOS DE LECTURA
 
         [HttpGet]
+        [Authorize(Roles = "Administrador,Mecanico")] // Solo personal autorizado
         public async Task<ActionResult<IEnumerable<ProductoDto>>> GetProductos()
             => Ok(await _service.GetAllAsync());
 
         [HttpPost]
-        [Authorize(Roles = "Administrador,Mecanico")] // Solo personal autorizado
+        [Authorize(Roles = "Administrador")] // Solo personal autorizado
         public async Task<ActionResult<ProductoDto>> PostProducto(ProductoDto dto)
         {
             try
@@ -45,7 +46,7 @@ namespace BiciRodriguez.Api.Controllers
         #region METODOS DE ACTUALIZACION
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Administrador,Mecanico")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> PutProducto(int id, ProductoDto dto)
         {
             if (id != dto.ProductoId) return BadRequest(new { mensaje = "ID no coincide." });

@@ -11,13 +11,10 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrls: ['./navbar.scss']
 })
 export class NavbarComponent implements OnInit {
-  rol: string = '';
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(public authService: AuthService, private router: Router) {}
 
   ngOnInit(): void {
-    // Al cargar el componente, obtenemos el rol real
-    this.rol = this.authService.getRol();
   }
 
   logout() {
